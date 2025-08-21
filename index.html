@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Resep Makanan Favorit</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr" crossorigin="anonymous">
+  </head>
+  <body>
+      <div class="container">
+        <div class="row">
+            <div class="col">
+                <h1>Table Resep</h1>
+                <div class="d-flex justify-content-end mb-3">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addResepModal">
+                     Add Resep
+                </button>
+                <div class="modal fade" id="addResepModal" tabindex="-1" aria-labelledby="addResepLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="addResepLabel">Tambah Resep</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="addResepForm">
+                        <div class="mb-3">
+                            <label class="form-label">Judul</label>
+                            <input type="text" class="form-control" id="judul" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Bahan</label>
+                            <textarea class="form-control" id="bahan" rows="3" required></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Langkah</label>
+                            <textarea class="form-control" id="langkah" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        </form>
+                    </div>
+                    </div>
+                </div>
+                </div>
+                </div>
+            </div>
+        </div>
+        <table class="table table-bordered">
+            <thead class="text-center">
+                <tr>
+                    <th style="background-color: lightpink;">NO.</th>
+                    <th style="background-color: lightpink;">Judul</th>
+                    <th style="background-color: lightpink;">Bahan</th>
+                    <th style="background-color: lightpink;">Langkah</th>
+                    <th style="background-color: lightpink;">Actions</th>
+                </tr>
+            </thead>
+            <tbody id="resepTable" class="text-center">
+                <tr>
+                    <td colspan="4"></td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+
+    <script>
+        function renderTable(){
+            fetch('http://localhost:8000/api/resep')
+                .then(response => response.json())
+                .then(result => {
+
+                    if(result.status == 200){
+                        let resepTable = document.getElementById('resepTable');
+                        let element = '';
+
+                        if(result.data.length == 0){
+                            element = `
+                                <tr>
+                                    <td colspan="5" class="text-center">No resep found</td>
+                                </tr>
+                            `;
+                        }
+    
+                        result.data.map((item, key) => {
+                            element += `
+                                <tr key="${key}">
+                                    <td>${key + 1}</td>
+                                    <td>${item.judul}</td>
+                                    <td>${item.bahan}</td>
+                                    <td>${item.langkah}</td>
+                                    <td>
+                                        <!-- Button trigger modal -->
+                                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteResep-${item.id}">
+                                        Delete
+                                        </button>
+
+                                        <!-- Modal -->
+                                        <div class="modal fade" id="deleteResep-${item.id}" tabindex="-1" aria-labelledby="deleteResep-${item.id}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h1 class="modal-title fs-5" id="deleteResep-${item.id}">Delete Resep</h1>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                Beneran nih mau delete resepnya???
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                                                <button onclick="deleteResep(${item.id})" type="button" class="btn btn-primary">Yes</button>
+                                            </div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+    
+                        resepTable.innerHTML = element;
+    
+                    } else {
+                        console.error(result.message);
+                    }
+                })
+                .catch(error => {
+                    console.log(error);
+                })
+            
+        }
+
+        renderTable();
+
+        function deleteResep(id){
+            console.log(id);
+
+            fetch(`http://localhost:8000/api/resep/destroy.php?id=${id}`, {
+                method: 'DELETE'
+            }).then(response => response.json())
+            .then(result => {
+                console.log(result);
+                renderTable();
+                document.getElementsByClassName('modal-backdrop')[0].remove()
+            });
+        }
+        
+        function createResep(e){
+            e.preventDefault();
+            
+            let judul = document.getElementById('judul').value;
+            let bahan = document.getElementById('bahan').value;
+            let langkah = document.getElementById('langkah').value;
+            
+            fetch("http://localhost:8000/api/resep/store.php", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    judul: judul,
+                    bahan: bahan,
+                    langkah: langkah
+                })
+            })
+            .then(response =>response.json())
+            .then(result => {
+                console.log(result);
+                if(result.status == 200) {
+                    alert("Berhasil tambah resep!");
+                    renderTable();                    
+                    let modalElement = document.getElementById('addResepModal');
+                    let modal = bootstrap.Modal.getInstance(modalElement); //
+                    modal.hide(); 
+                }else {
+                    alert("Gagal: " + result.message);
+                }
+            })
+            .catch(error => {
+                console.log(error);
+            });
+        }
+
+        document.getElementById("addResepForm").addEventListener("submit", createResep);
+
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js" integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q" crossorigin="anonymous"></script>
+  </body>
+</html>
