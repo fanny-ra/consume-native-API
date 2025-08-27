@@ -89,7 +89,41 @@
                                     <td>${item.judul}</td>
                                     <td>${item.bahan}</td>
                                     <td>${item.langkah}</td>
-                                    <td>
+                                    <td>      
+                                        <!-- Button trigger modal -->
+                                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#editResep-${item.id}">
+                                        Edit
+                                        </button>
+
+                                        <!-- Modal -->
+                                        <div class="modal fade" id="editResep-${item.id}" tabindex="-1" aria-labelledby="editResep-${item.id}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h1 class="modal-title fs-5" id="editResep-${item.id}">Edit Resep</h1>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <form onsubmit="editResep(event, ${item.id})">
+                                                <div class="mb-3">
+                                                    <label class="form-label">Judul</label>
+                                                    <input type="text" class="form-control" id="newjudul${item.id}" value="${item.judul}" required>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Bahan</label>
+                                                    <textarea class="form-control" id="newbahan${item.id}" rows="3" required>${item.bahan}</textarea>
+                                                </div>
+                                                <div class="mb-3">
+                                                    <label class="form-label">Langkah</label>
+                                                    <textarea class="form-control" id="newlangkah${item.id}" rows="3" required>${item.langkah}</textarea>
+                                                </div>
+                                                <button type="submit" class="btn btn-primary">Save</button>
+                                                </form>
+                                            </div>
+                                            </div>
+                                        </div>
+                                        </div>
+
                                         <!-- Button trigger modal -->
                                         <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteResep-${item.id}">
                                         Delete
@@ -127,11 +161,10 @@
                 .catch(error => {
                     console.log(error);
                 })
+            }
+            renderTable();
+
             
-        }
-
-        renderTable();
-
         function deleteResep(id){
             console.log(id);
 
@@ -145,7 +178,41 @@
             });
         }
         
-        function createResep(e){
+        function editResep(event, id) {
+            event.preventDefault();
+            
+            let judul = document.getElementById('newjudul' + id).value;
+            let bahan = document.getElementById('newbahan' + id).value;
+            let langkah = document.getElementById('newlangkah' + id).value;
+            
+            fetch(`http://localhost:8000/api/resep/update.php?id=${id}`, {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    judul: judul,
+                    bahan: bahan,
+                    langkah: langkah
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                console.log(result);
+                if(result.status == 200){
+                    renderTable();
+                    document.getElementsByClassName('modal-backdrop')[0].remove();
+                    document.getElementsByClassName('btn-close')[0].click();
+                } else {
+                    alert("Gagal update: " + result.message);
+                }
+            })
+            .catch(error => {
+                console.log(error);
+            });
+        }
+
+        function createResep(e) {
             e.preventDefault();
             
             let judul = document.getElementById('judul').value;
@@ -167,11 +234,9 @@
             .then(result => {
                 console.log(result);
                 if(result.status == 200) {
-                    alert("Berhasil tambah resep!");
                     renderTable();                    
-                    let modalElement = document.getElementById('addResepModal');
-                    let modal = bootstrap.Modal.getInstance(modalElement); //
-                    modal.hide(); 
+                    document.getElementsByClassName('modal-backdrop')[0].remove();
+                    document.getElementsByClassName('btn-close')[0].click();
                 }else {
                     alert("Gagal: " + result.message);
                 }
